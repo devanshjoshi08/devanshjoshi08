@@ -1,0 +1,59 @@
+name: refresh stats
+
+on:
+  schedule:
+    - cron: "17 5 * * *"      # 05:17 UTC every day
+  workflow_dispatch: {}        # no push trigger: this job commits, and a push
+                               # trigger would re-run it on its own commit
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-stats
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate stat graphics
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_LOGIN: ${{ github.repository_owner }}
+        run: python3 scripts/generate_stats.py
+
+      - name: Publish graphics to the assets branch
+        run: |
+          # The generated SVGs are published to a separate `assets` branch, not
+          # to main. GitHub computes the contribution graph and the repo's
+          # contributor list from the default branch only, so these automated
+          # refreshes never appear in the project history, never pad the graph,
+          # and never add a contributor. main stays a single clean commit.
+          FILES="stats.svg streak.svg langs.svg year.svg"
+          tmp="$(mktemp -d)"
+          cp $FILES "$tmp"/
+
+          git config user.name  "Devansh Joshi"
+          git config user.email "profile-stats@devanshjoshi08.invalid"
+
+          if git ls-remote --exit-code --heads origin assets >/dev/null 2>&1; then
+            git fetch -q origin assets
+            git checkout -q -f -B assets origin/assets
+            git clean -qfdx
+          else
+            git checkout -q --orphan assets
+            git rm -rq -f --cached . >/dev/null 2>&1 || true
+            git clean -qfdx
+          fi
+
+          cp "$tmp"/* .
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No change; nothing to commit."
+            exit 0
+          fi
+          git commit -m "Update contribution stats"
+          git push -q origin assets

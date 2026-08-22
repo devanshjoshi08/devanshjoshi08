@@ -1,0 +1,20 @@
+# Keep the raw headshot out of the public repo — only the derived
+# portrait.svg is committed. Delete this line if you want the photo public.
+assets/photo.*
+assets/*.jpg
+assets/*.jpeg
+assets/*.png
+assets/*.webp
+
+# generated stat graphics live on the `assets` branch, never on main
+stats.svg
+streak.svg
+langs.svg
+year.svg
+
+# local preview scaffolding
+preview.html
+preview_*.png
+
+__pycache__/
+*.pyc

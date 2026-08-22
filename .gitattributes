@@ -1,0 +1,10 @@
+# Normalize text to LF so the Linux workflow regenerates byte-identical SVGs
+# (otherwise every nightly run would see a CRLF/LF diff and commit a no-op).
+* text=auto eol=lf
+
+*.woff2 binary
+*.ttf   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.webp  binary
